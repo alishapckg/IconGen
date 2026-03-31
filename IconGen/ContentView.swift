@@ -3,16 +3,11 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
   
-  // MARK: - Properties
-  
   @State private var droppedImage: NSImage?
   @State private var isGenerating = false
   @State private var statusMessage = "Drop a 1024x1024 image here"
   @State private var showMessage = true
-  @State private var selectedMode: GenerationMode = .single
-  
-  
-  // MARK: - Body
+  @State private var selectedMode: GenerationMode = .ios
   
   var body: some View {
     VStack(spacing: 20) {
@@ -20,16 +15,13 @@ struct ContentView: View {
         .font(.largeTitle)
         .bold()
       
-      // Mode picker
       Picker("Mode", selection: $selectedMode) {
         ForEach(GenerationMode.allCases) { mode in
           Text(mode.rawValue).tag(mode)
         }
       }
       .pickerStyle(.segmented)
-      .frame(width: 300)
       
-      // Drop zone
       ZStack {
         Rectangle()
           .fill(Color(nsColor: .controlBackgroundColor))
@@ -85,11 +77,10 @@ struct ContentView: View {
       }
     }
     .padding(30)
-    .frame(minWidth: 420, minHeight: 430)
+//    .frame(minWidth: 420, minHeight: 430)
   }
   
-  
-  // MARK: - Methods
+  // MARK: - Logic
   
   private func processAndSave(image: NSImage, to directory: URL, mode: GenerationMode) {
     let setUrl = directory.appendingPathComponent("AppIcon.appiconset")
@@ -98,53 +89,58 @@ struct ContentView: View {
       try FileManager.default.createDirectory(at: setUrl, withIntermediateDirectories: true)
       var jsonImages: [[String: String]] = []
       
-      if mode == .single {
-        let fileName = "AppIcon.png"
-        if let data = getPNGData(for: image, size: 1024) {
-          try data.write(to: setUrl.appendingPathComponent(fileName))
-          jsonImages.append(["filename": fileName, "idiom": "universal", "platform": "ios", "size": "1024x1024"])
+      // --- iOS ---
+      if mode == .ios || mode == .all {
+        let iosSizes = [40, 58, 60, 76, 80, 87, 120, 152, 167, 180, 1024]
+        for size in iosSizes {
+          let fileName = "icon_\(size)x\(size).png"
+          if let data = getPNGData(for: image, size: size) {
+            try data.write(to: setUrl.appendingPathComponent(fileName))
+          }
         }
-      } else {
-        let allRequestedSizes = [40, 58, 60, 76, 80, 87, 120, 152, 167, 180, 1024]
-        
-        for size in allRequestedSizes {
+        jsonImages.append(contentsOf: [
+          ["filename": "icon_40x40.png",   "size": "20x20",     "scale": "2x", "idiom": "iphone"],
+          ["filename": "icon_60x60.png",   "size": "20x20",     "scale": "3x", "idiom": "iphone"],
+          ["filename": "icon_40x40.png",   "size": "20x20",     "scale": "2x", "idiom": "ipad"],
+          ["filename": "icon_58x58.png",   "size": "29x29",     "scale": "2x", "idiom": "iphone"],
+          ["filename": "icon_87x87.png",   "size": "29x29",     "scale": "3x", "idiom": "iphone"],
+          ["filename": "icon_58x58.png",   "size": "29x29",     "scale": "2x", "idiom": "ipad"],
+          ["filename": "icon_80x80.png",   "size": "40x40",     "scale": "2x", "idiom": "iphone"],
+          ["filename": "icon_120x120.png", "size": "40x40",     "scale": "3x", "idiom": "iphone"],
+          ["filename": "icon_80x80.png",   "size": "40x40",     "scale": "2x", "idiom": "ipad"],
+          ["filename": "icon_120x120.png", "size": "60x60",     "scale": "2x", "idiom": "iphone"],
+          ["filename": "icon_180x180.png", "size": "60x60",     "scale": "3x", "idiom": "iphone"],
+          ["filename": "icon_76x76.png",   "size": "76x76",     "scale": "1x", "idiom": "ipad"],
+          ["filename": "icon_152x152.png", "size": "76x76",     "scale": "2x", "idiom": "ipad"],
+          ["filename": "icon_167x167.png", "size": "83.5x83.5", "scale": "2x", "idiom": "ipad"],
+          ["filename": "icon_1024x1024.png","size": "1024x1024","scale": "1x", "idiom": "ios-marketing"]
+        ])
+      }
+      
+      // --- macOS ---
+      if mode == .macos || mode == .all {
+        // 7 files for 10 slots
+        let macSizes = [16, 32, 64, 128, 256, 512, 1024]
+        for size in macSizes {
           let fileName = "icon_\(size)x\(size).png"
           if let data = getPNGData(for: image, size: size) {
             try data.write(to: setUrl.appendingPathComponent(fileName))
           }
         }
         
-        // Perfect Contents.json with ALL slots (iPhone and iPad)
-        jsonImages = [
-          // --- 20 pt ---
-          ["filename": "icon_40x40.png",   "size": "20x20",     "scale": "2x", "idiom": "iphone"],
-          ["filename": "icon_60x60.png",   "size": "20x20",     "scale": "3x", "idiom": "iphone"],
-          ["filename": "icon_40x40.png",   "size": "20x20",     "scale": "2x", "idiom": "ipad"],
-          
-          // --- 29 pt ---
-          ["filename": "icon_58x58.png",   "size": "29x29",     "scale": "2x", "idiom": "iphone"],
-          ["filename": "icon_87x87.png",   "size": "29x29",     "scale": "3x", "idiom": "iphone"],
-          ["filename": "icon_58x58.png",   "size": "29x29",     "scale": "2x", "idiom": "ipad"],
-          
-          // --- 40 pt ---
-          ["filename": "icon_80x80.png",   "size": "40x40",     "scale": "2x", "idiom": "iphone"],
-          ["filename": "icon_120x120.png", "size": "40x40",     "scale": "3x", "idiom": "iphone"],
-          ["filename": "icon_80x80.png",   "size": "40x40",     "scale": "2x", "idiom": "ipad"],
-          
-          // --- 60 pt ---
-          ["filename": "icon_120x120.png", "size": "60x60",     "scale": "2x", "idiom": "iphone"],
-          ["filename": "icon_180x180.png", "size": "60x60",     "scale": "3x", "idiom": "iphone"],
-          
-          // --- 76 pt ---
-          ["filename": "icon_76x76.png",   "size": "76x76",     "scale": "1x", "idiom": "ipad"],
-          ["filename": "icon_152x152.png", "size": "76x76",     "scale": "2x", "idiom": "ipad"],
-          
-          // --- 83.5 pt ---
-          ["filename": "icon_167x167.png", "size": "83.5x83.5", "scale": "2x", "idiom": "ipad"],
-          
-          // --- Marketing ---
-          ["filename": "icon_1024x1024.png","size": "1024x1024","scale": "1x", "idiom": "ios-marketing"]
-        ]
+        // Маппинг строго по вашему списку
+        jsonImages.append(contentsOf: [
+          ["filename": "icon_16x16.png",     "size": "16x16",     "scale": "1x", "idiom": "mac"], // 16x16 px (1x) 16 pt
+          ["filename": "icon_32x32.png",     "size": "16x16",     "scale": "2x", "idiom": "mac"], // 32x32 px (2x) 16 pt
+          ["filename": "icon_32x32.png",     "size": "32x32",     "scale": "1x", "idiom": "mac"], // 32x32 px (1x) 32 pt
+          ["filename": "icon_64x64.png",     "size": "32x32",     "scale": "2x", "idiom": "mac"], // 64x64 px (2x) 32 pt
+          ["filename": "icon_128x128.png",   "size": "128x128",   "scale": "1x", "idiom": "mac"], // 128x128 px (1x) 128 pt
+          ["filename": "icon_256x256.png",   "size": "128x128",   "scale": "2x", "idiom": "mac"], // 256x256 px (2x) 128 pt
+          ["filename": "icon_256x256.png",   "size": "256x256",   "scale": "1x", "idiom": "mac"], // 256x256 px (1x) 256 pt
+          ["filename": "icon_512x512.png",   "size": "256x256",   "scale": "2x", "idiom": "mac"], // 512x512 px (2x) 256 pt
+          ["filename": "icon_512x512.png",   "size": "512x512",   "scale": "1x", "idiom": "mac"], // 512x512 px (1x) 512 pt
+          ["filename": "icon_1024x1024.png", "size": "512x512",   "scale": "2x", "idiom": "mac"]  // 1024x1024 px (2x) 512 pt
+        ])
       }
       
       let jsonDict: [String: Any] = ["images": jsonImages, "info": ["version": 1, "author": "xcode"]]
@@ -153,7 +149,7 @@ struct ContentView: View {
       
       DispatchQueue.main.async {
         self.isGenerating = false
-        self.statusMessage = "✅ Done! All iPhone and iPad slots are filled."
+        self.statusMessage = "✅ Done! Generated \(jsonImages.count) icon slots."
         NSWorkspace.shared.open(setUrl)
       }
     } catch {
@@ -163,6 +159,8 @@ struct ContentView: View {
       }
     }
   }
+  
+  // MARK: - Drag & Drop / File Select
   
   private func handleDrop(providers: [NSItemProvider]) -> Bool {
     guard let provider = providers.first else { return false }
@@ -229,7 +227,8 @@ struct ContentView: View {
     }
   }
   
-  // resize func
+  // MARK: - Resize
+  
   private func getPNGData(for image: NSImage, size: Int) -> Data? {
     guard let rep = NSBitmapImageRep(
       bitmapDataPlanes: nil, pixelsWide: size, pixelsHigh: size,
