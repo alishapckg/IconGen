@@ -3,6 +3,7 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
   
+  
   @State private var droppedImage: NSImage?
   @State private var isGenerating = false
   @State private var statusMessage = "Drop a 1024x1024 image here"
