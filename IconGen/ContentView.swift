@@ -3,12 +3,15 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
   
+  // MARK: - Parameters
   
   @State private var droppedImage: NSImage?
   @State private var isGenerating = false
   @State private var statusMessage = "Drop a 1024x1024 image here"
   @State private var showMessage = true
   @State private var selectedMode: GenerationMode = .ios
+  
+  // MARK: - Body
   
   var body: some View {
     VStack(spacing: 20) {
