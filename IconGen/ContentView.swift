@@ -81,7 +81,6 @@ struct ContentView: View {
       }
     }
     .padding(30)
-//    .frame(minWidth: 420, minHeight: 430)
   }
   
   // MARK: - Logic
