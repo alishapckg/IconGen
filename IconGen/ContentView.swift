@@ -44,6 +44,24 @@ struct ContentView: View {
             .frame(width: 100, height: 100)
             .cornerRadius(16)
             .shadow(radius: 10)
+            .overlay(alignment: .topTrailing) {
+              
+              // To delete selected item
+              Button(action: {
+                withAnimation {
+                  droppedImage = nil
+                  statusMessage = "Drop a 1024x1024 image here"
+                }
+              }) {
+                Image(systemName: "xmark.circle.fill")
+                  .font(.system(size: 24))
+                  .symbolRenderingMode(.palette)
+                  .foregroundStyle(.white, .red)
+              }
+              .buttonStyle(.plain)
+              .offset(x: 10, y: -10)
+              .transition(.opacity.combined(with: .scale))
+            }
         } else {
           VStack {
             Image(systemName: "arrow.down.doc.fill")
@@ -57,6 +75,7 @@ struct ContentView: View {
       .onDrop(of: [.image, .fileURL], isTargeted: nil) { providers in
         handleDrop(providers: providers)
       }
+      .animation(.easeInOut, value: droppedImage)
       
       HStack(spacing: 20) {
         Button(action: selectFile) {
@@ -131,7 +150,6 @@ struct ContentView: View {
           }
         }
         
-        // Маппинг строго по вашему списку
         jsonImages.append(contentsOf: [
           ["filename": "icon_16x16.png",     "size": "16x16",     "scale": "1x", "idiom": "mac"], // 16x16 px (1x) 16 pt
           ["filename": "icon_32x32.png",     "size": "16x16",     "scale": "2x", "idiom": "mac"], // 32x32 px (2x) 16 pt
