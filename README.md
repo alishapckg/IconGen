@@ -10,7 +10,7 @@ Simply drag and drop a 1024x1024 source image, choose your target platform (iOS,
 
 To install the app using the pre-compiled .dmg release:
 
-- Go to the [Releases page](https://github.com/IconGen) and download the latest IconGen.dmg file.
+- Go to the [Releases page](https://github.com/alishapckg/IconGen/releases) and download the latest IconGen.dmg file.
 - Once the download is complete, double-click the .dmg file to mount it.
 - A new Finder window will appear showing the IconGen application.
 - Drag and drop the IconGen app into the Applications folder shortcut.
