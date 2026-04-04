@@ -17,7 +17,9 @@ To install the app using the pre-compiled .dmg release:
 - Eject the .dmg file (right-click the disk icon on your desktop and select "Eject").
 - Launch IconGen from your Applications folder.
 
-_(Note: On the first launch, macOS may prompt you with a security warning because the app was downloaded from the internet. To bypass this, go to **System Settings** > **Privacy & Security**, scroll down, and click **Open Anyway** next to the **IconGen message**. Don't worry, the app's code is safe)._
+_(Note: On the first launch, macOS may prompt you with a security warning because the app was downloaded from the internet. 
+To bypass this, go to **System Settings** > **Privacy & Security**, scroll down, and click **Open Anyway** next to the **IconGen message**. 
+Don't worry, the app's code is safe)._
 
 ### 💡 How to Use
 
