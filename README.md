@@ -1,4 +1,4 @@
-<img src="https://github.com/user-attachments/assets/226e9f64-b381-4c66-8c24-00e1ec1614a3" width="300" alt="IconGen Preview" />
+<img width="300" height="300" alt="photo_2026-04-04 20 00 05" src="https://github.com/user-attachments/assets/bb409d44-7f33-4e32-8c19-a87782a08be5" />
 
 # IconGen
 
