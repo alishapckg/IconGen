@@ -10,96 +10,222 @@ struct ContentView: View {
   @State private var statusMessage = "Drop a 1024x1024 image here"
   @State private var showMessage = true
   @State private var selectedMode: GenerationMode = .ios
+  @State private var messageID = UUID()
   
   // MARK: - Body
   
   var body: some View {
-    VStack(spacing: 20) {
-      Text("App Icon Generator")
-        .font(.largeTitle)
-        .bold()
-      
-      Picker("Mode", selection: $selectedMode) {
-        ForEach(GenerationMode.allCases) { mode in
-          Text(mode.rawValue).tag(mode)
-        }
+    VStack(spacing: 0) {
+      VStack(spacing: 6) {
+        Text("App Icon Generator")
+          .font(.system(size: 26, weight: .bold, design: .rounded))
+          .foregroundColor(Color(red: 0.2, green: 0.2, blue: 0.25))
+        
+        Text("Perfect sizes for Xcode in one click")
+          .font(.system(size: 14, weight: .medium))
+          .foregroundColor(.secondary)
       }
-      .pickerStyle(.segmented)
+      .padding(.top, 32)
+      .padding(.bottom, 24)
+      
+      HStack(spacing: 0) {
+        Picker("Mode", selection: $selectedMode) {
+          ForEach(GenerationMode.allCases) { mode in
+            Text(mode.rawValue).tag(mode)
+          }
+        }
+        .pickerStyle(.segmented)
+        .padding(4)
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(10)
+        .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
+      }
+      .padding(.horizontal, 32)
+      .padding(.bottom, 28)
       
       ZStack {
-        Rectangle()
-          .fill(Color(nsColor: .controlBackgroundColor))
-          .frame(width: 300, height: 220)
-          .cornerRadius(16)
+        RoundedRectangle(cornerRadius: 24)
+          .fill(Color(NSColor.controlBackgroundColor))
+          .shadow(color: .black.opacity(0.06), radius: 20, x: 0, y: 10)
+          .shadow(color: .black.opacity(0.03), radius: 5, x: 0, y: 2)
           .overlay(
-            RoundedRectangle(cornerRadius: 16)
-              .stroke(style: StrokeStyle(lineWidth: 3, dash: [10]))
-              .foregroundColor(.accentColor)
+            RoundedRectangle(cornerRadius: 24)
+              .strokeBorder(
+                droppedImage != nil
+                ? Color.green.opacity(0.3)
+                : Color.blue.opacity(0.15),
+                style: StrokeStyle(lineWidth: 2, dash: [12])
+              )
           )
+          .frame(width: 320, height: 220)
         
         if let image = droppedImage {
           Image(nsImage: image)
             .resizable()
             .scaledToFit()
-            .frame(width: 100, height: 100)
-            .cornerRadius(16)
-            .shadow(radius: 10)
+            .frame(width: 120, height: 120)
+            .cornerRadius(26)
+            .shadow(color: .black.opacity(0.15), radius: 15, x: 0, y: 8)
+            .transition(.asymmetric(
+              insertion: .scale(scale: 0.5).combined(with: .opacity),
+              removal: .scale(scale: 0.8).combined(with: .opacity)
+            ))
             .overlay(alignment: .topTrailing) {
-              
-              // To delete selected item
               Button(action: {
-                withAnimation {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
                   droppedImage = nil
                   statusMessage = "Drop a 1024x1024 image here"
+                  messageID = UUID()
                 }
               }) {
                 Image(systemName: "xmark.circle.fill")
-                  .font(.system(size: 24))
+                  .font(.system(size: 28, weight: .medium))
                   .symbolRenderingMode(.palette)
-                  .foregroundStyle(.white, .red)
+                  .foregroundStyle(.white, .red.opacity(0.85))
+                  .shadow(color: .red.opacity(0.3), radius: 4, x: 0, y: 2)
               }
               .buttonStyle(.plain)
-              .offset(x: 10, y: -10)
-              .transition(.opacity.combined(with: .scale))
+              .offset(x: 14, y: -14)
+              .transition(.identity)
             }
         } else {
-          VStack {
+          VStack(spacing: 14) {
             Image(systemName: "arrow.down.doc.fill")
-              .font(.system(size: 40))
-              .foregroundColor(.secondary)
+              .font(.system(size: 44, weight: .light))
+              .foregroundStyle(
+                .linearGradient(
+                  colors: [.blue.opacity(0.6), .purple.opacity(0.6)],
+                  startPoint: .topLeading,
+                  endPoint: .bottomTrailing
+                )
+              )
+            
             Text("Drag & Drop PNG")
-              .padding(.top, 8)
+              .font(.system(size: 15, weight: .semibold, design: .rounded))
+              .foregroundColor(.secondary.opacity(0.8))
           }
+          .transition(.opacity)
         }
       }
+      .frame(height: 220)
+      .padding(.horizontal, 32)
       .onDrop(of: [.image, .fileURL], isTargeted: nil) { providers in
-        handleDrop(providers: providers)
-      }
-      .animation(.easeInOut, value: droppedImage)
-      
-      HStack(spacing: 20) {
-        Button(action: selectFile) {
-          Text("Select File")
-            .frame(width: 130)
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+          handleDrop(providers: providers)
         }
+      }
+      .padding(.bottom, 28)
+      
+      HStack(spacing: 14) {
+        Button(action: {
+          withAnimation(.easeInOut(duration: 0.2)) { selectFile() }
+        }) {
+          HStack(spacing: 8) {
+            Image(systemName: "folder")
+              .font(.system(size: 15, weight: .medium))
+            Text("Select File")
+              .font(.system(size: 15, weight: .semibold, design: .rounded))
+          }
+          .frame(maxWidth: .infinity)
+          .padding(.vertical, 14)
+          .background(Color(NSColor.controlBackgroundColor))
+          .cornerRadius(14)
+          .overlay(
+            RoundedRectangle(cornerRadius: 14)
+              .strokeBorder(Color.black.opacity(0.08), lineWidth: 1)
+          )
+          .foregroundColor(.primary)
+          .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
+        }
+        .buttonStyle(.plain)
         
-        Button(action: generateIcons) {
-          Text(isGenerating ? "Generating..." : "Generate")
-            .frame(width: 130)
+        Button(action: {
+          withAnimation(.easeInOut(duration: 0.2)) { generateIcons() }
+        }) {
+          HStack(spacing: 8) {
+            if isGenerating {
+              ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                .scaleEffect(0.85)
+            } else {
+              Image(systemName: "wand.and.stars.inverse")
+                .font(.system(size: 15, weight: .medium))
+            }
+            Text(isGenerating ? "Working..." : "Generate")
+              .font(.system(size: 15, weight: .semibold, design: .rounded))
+          }
+          .frame(maxWidth: .infinity)
+          .padding(.vertical, 14)
+          .background(
+            Group {
+              if droppedImage != nil && !isGenerating {
+                LinearGradient(
+                  colors: [Color.blue, Color.purple],
+                  startPoint: .leading,
+                  endPoint: .trailing
+                )
+              } else {
+                LinearGradient(
+                  colors: [Color.gray.opacity(0.4), Color.gray.opacity(0.5)],
+                  startPoint: .leading,
+                  endPoint: .trailing
+                )
+              }
+            }
+          )
+          .cornerRadius(14)
+          .foregroundColor(.white)
+          .shadow(color: (droppedImage != nil && !isGenerating) ? Color.purple.opacity(0.35) : Color.clear, radius: 12, x: 0, y: 6)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.plain)
         .disabled(droppedImage == nil || isGenerating)
+        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: droppedImage)
+        .animation(.easeInOut(duration: 0.2), value: isGenerating)
       }
+      .padding(.horizontal, 32)
+      .padding(.bottom, 24)
       
-      if showMessage {
-        Text(statusMessage)
-          .foregroundColor(.secondary)
-          .multilineTextAlignment(.center)
-          .frame(width: 350)
-          .font(.callout)
+      ZStack {
+        if showMessage {
+          HStack(spacing: 10) {
+            if statusMessage.contains("✅") {
+              Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.green)
+            } else if statusMessage.contains("❌") {
+              Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.red)
+            } else {
+              Image(systemName: "info.circle")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.secondary)
+            }
+            
+            Text(statusMessage.replacingOccurrences(of: "✅ ", with: "").replacingOccurrences(of: "❌ Error: ", with: ""))
+              .font(.system(size: 13, weight: .medium, design: .rounded))
+              .foregroundColor(.secondary)
+              .lineLimit(nil)
+              .multilineTextAlignment(.center)
+          }
+          .padding(.horizontal, 20)
+          .padding(.vertical, 12)
+          .fixedSize(horizontal: true, vertical: true)
+          .background(Color(NSColor.controlBackgroundColor))
+          .cornerRadius(14)
+          .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
+          .padding(.horizontal, 32)
+          .transition(.asymmetric(
+            insertion: .move(edge: .bottom).combined(with: .opacity).combined(with: .scale(scale: 0.95)),
+            removal: .move(edge: .bottom).combined(with: .opacity).combined(with: .scale(scale: 0.95))
+          ))
+          .id(messageID)
+        }
       }
+      .padding(.bottom, 24)
     }
-    .padding(30)
+    .frame(width: 400)
+    .background(Color(NSColor.windowBackgroundColor))
   }
   
   // MARK: - Logic
@@ -171,22 +297,22 @@ struct ContentView: View {
       DispatchQueue.main.async {
         self.isGenerating = false
         self.statusMessage = "✅ Done! Generated \(jsonImages.count) icon slots."
+        self.messageID = UUID()
+        
         NSWorkspace.shared.open(setUrl)
       }
     } catch {
       DispatchQueue.main.async {
         self.isGenerating = false
         self.statusMessage = "❌ Error: \(error.localizedDescription)"
+        self.messageID = UUID()
       }
     }
   }
   
-  // MARK: - Drag & Drop / File Select
-  
   private func handleDrop(providers: [NSItemProvider]) -> Bool {
     guard let provider = providers.first else { return false }
     
-    // 1. First, check if we dropped a FILE (e.g., from Desktop or Finder)
     if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
       let _ = provider.loadDataRepresentation(for: UTType.fileURL) { data, error in
         DispatchQueue.main.async {
@@ -195,19 +321,20 @@ struct ContentView: View {
              let image = NSImage(contentsOf: url) {
             self.droppedImage = image
             self.statusMessage = "Image loaded! Select a mode and click 'Generate'"
+            self.messageID = UUID()
           }
         }
       }
       return true
     }
     
-    // 2. If we dropped an IMAGE directly (e.g., from browser or photos)
     if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
       let _ = provider.loadDataRepresentation(for: UTType.image) { data, error in
         DispatchQueue.main.async {
           if let data = data, let image = NSImage(data: data) {
             self.droppedImage = image
             self.statusMessage = "Image loaded! Select a mode and click 'Generate'"
+            self.messageID = UUID()
           }
         }
       }
@@ -225,6 +352,7 @@ struct ContentView: View {
       if let image = NSImage(contentsOf: url) {
         self.droppedImage = image
         self.statusMessage = "Image loaded! Select a mode and click 'Generate'"
+        self.messageID = UUID()
       }
     }
   }
@@ -241,14 +369,13 @@ struct ContentView: View {
     if panel.runModal() == .OK, let saveUrl = panel.url {
       isGenerating = true
       statusMessage = "Creating folder and resizing..."
+      messageID = UUID()
       
       DispatchQueue.global(qos: .userInitiated).async {
         self.processAndSave(image: originalImage, to: saveUrl, mode: self.selectedMode)
       }
     }
   }
-  
-  // MARK: - Resize
   
   private func getPNGData(for image: NSImage, size: Int) -> Data? {
     guard let rep = NSBitmapImageRep(
