@@ -3,6 +3,7 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
   
+  
   // MARK: - Parameters
   
   @EnvironmentObject private var generator: IconGenerator
@@ -11,6 +12,7 @@ struct ContentView: View {
   @State private var selectedMode: GenerationMode = .ios
   @State private var iosIconStyle: IOSIconStyle = .allSizes
   @State private var messageID = UUID()
+  
   
   // MARK: - Body
   
