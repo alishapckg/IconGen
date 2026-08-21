@@ -1,13 +1,6 @@
 import AppKit
 import Combine
 
-enum IOSIconStyle: String, CaseIterable, Identifiable {
-  case allSizes
-  case singleSize
-  
-  var id: String { self.rawValue }
-}
-
 @MainActor
 final class IconGenerator: ObservableObject {
   @Published var isGenerating = false
