@@ -239,7 +239,7 @@ struct ContentView: View {
     }
     .frame(width: 400)
     .background(Color(NSColor.windowBackgroundColor))
-    .onChange(of: generator.statusMessage) { _ in
+    .onChange(of: generator.statusMessage) {
       messageID = UUID()
     }
   }

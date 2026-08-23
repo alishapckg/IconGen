@@ -19,10 +19,12 @@ final class IconGenerator: ObservableObject {
     statusMessage = "Creating folder and resizing..."
     
     let setUrl = directory.appendingPathComponent("AppIcon.appiconset")
+    let (ios, macos, watchos) = Self.platformFlags(for: mode)
+    let singleSize = iosStyle == .singleSize
     Task {
       do {
         let slotCount = try await Task.detached(priority: .userInitiated) {
-          try IconGenerator.writeIconSet(image: image, to: setUrl, mode: mode, iosStyle: iosStyle)
+          try IconGenerator.writeIconSet(image: image, to: setUrl, ios: ios, macos: macos, watchos: watchos, singleSize: singleSize)
         }.value
         isGenerating = false
         statusMessage = "✅ Done! Generated \(slotCount) icon slots."
@@ -53,7 +55,16 @@ final class IconGenerator: ObservableObject {
     return NSSize(width: image.size.width, height: image.size.height)
   }
   
-  private nonisolated static func writeIconSet(image: NSImage, to setUrl: URL, mode: GenerationMode, iosStyle: IOSIconStyle) throws -> Int {
+  private nonisolated static func platformFlags(for mode: GenerationMode) -> (ios: Bool, macos: Bool, watchos: Bool) {
+    switch mode {
+    case .ios:     return (true, false, false)
+    case .macos:   return (false, true, false)
+    case .watchos: return (false, false, true)
+    case .all:     return (true, true, true)
+    }
+  }
+  
+  private nonisolated static func writeIconSet(image: NSImage, to setUrl: URL, ios: Bool, macos: Bool, watchos: Bool, singleSize: Bool) throws -> Int {
     if FileManager.default.fileExists(atPath: setUrl.path) {
       let existing = try FileManager.default.contentsOfDirectory(at: setUrl, includingPropertiesForKeys: nil)
       for staleUrl in existing {
@@ -64,8 +75,8 @@ final class IconGenerator: ObservableObject {
     var jsonImages: [[String: Any]] = []
     
     // --- iOS ---
-    if mode == .ios || mode == .all {
-      if iosStyle == .singleSize {
+    if ios {
+      if singleSize {
         let singleSizeFiles: [(file: String, appearance: String?)] = [
           ("AppIcon.png", nil),
           ("AppIcon-Dark.png", "dark"),
@@ -117,7 +128,7 @@ final class IconGenerator: ObservableObject {
     }
     
     // --- macOS ---
-    if mode == .macos || mode == .all {
+    if macos {
       let macSizes = [16, 32, 64, 128, 256, 512, 1024]
       for size in macSizes {
         let fileName = "icon_\(size)x\(size).png"
@@ -141,7 +152,7 @@ final class IconGenerator: ObservableObject {
     }
     
     // --- watchOS ---
-    if mode == .watchos || mode == .all {
+    if watchos {
       // 20 slots, Xcode 26 "All Sizes" schema (universal idiom, no roles/subtypes)
       let watchSlots: [(file: String, px: Int, size: String, scale: String?)] = [
         ("icon_44x44.png",   44,   "22x22",     "2x"),

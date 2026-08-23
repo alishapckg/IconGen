@@ -1,4 +1,4 @@
-enum GenerationMode: String, CaseIterable, Identifiable {
+enum GenerationMode: CaseIterable, Identifiable {
   case ios
   case macos
   case watchos
