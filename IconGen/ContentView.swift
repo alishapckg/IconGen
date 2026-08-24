@@ -5,9 +5,8 @@ struct ContentView: View {
   
   // MARK: - Parameters
   
+  @EnvironmentObject private var generator: IconGenerator
   @State private var droppedImage: NSImage?
-  @State private var isGenerating = false
-  @State private var statusMessage = "Drop a 1024x1024 image here"
   @State private var showMessage = true
   @State private var selectedMode: GenerationMode = .ios
   @State private var iosIconStyle: IOSIconStyle = .allSizes
@@ -82,7 +81,7 @@ struct ContentView: View {
               Button(action: {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
                   droppedImage = nil
-                  statusMessage = "Drop a 1024x1024 image here"
+                  generator.statusMessage = "Drop a 1024x1024 image here"
                   messageID = UUID()
                 }
               }) {
@@ -151,7 +150,7 @@ struct ContentView: View {
           withAnimation(.easeInOut(duration: 0.2)) { generateIcons() }
         }) {
           HStack(spacing: 8) {
-            if isGenerating {
+            if generator.isGenerating {
               ProgressView()
                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 .scaleEffect(0.85)
@@ -159,14 +158,14 @@ struct ContentView: View {
               Image(systemName: "wand.and.stars.inverse")
                 .font(.system(size: 15, weight: .medium))
             }
-            Text(isGenerating ? "Working..." : "Generate")
+            Text(generator.isGenerating ? "Working..." : "Generate")
               .font(.system(size: 15, weight: .semibold, design: .rounded))
           }
           .frame(maxWidth: .infinity)
           .padding(.vertical, 14)
           .background(
             Group {
-              if droppedImage != nil && !isGenerating {
+              if droppedImage != nil && !generator.isGenerating {
                 LinearGradient(
                   colors: [Color.blue, Color.purple],
                   startPoint: .leading,
@@ -183,12 +182,12 @@ struct ContentView: View {
           )
           .cornerRadius(14)
           .foregroundColor(.white)
-          .shadow(color: (droppedImage != nil && !isGenerating) ? Color.purple.opacity(0.35) : Color.clear, radius: 12, x: 0, y: 6)
+          .shadow(color: (droppedImage != nil && !generator.isGenerating) ? Color.purple.opacity(0.35) : Color.clear, radius: 12, x: 0, y: 6)
         }
         .buttonStyle(.plain)
-        .disabled(droppedImage == nil || isGenerating)
+        .disabled(droppedImage == nil || generator.isGenerating)
         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: droppedImage)
-        .animation(.easeInOut(duration: 0.2), value: isGenerating)
+        .animation(.easeInOut(duration: 0.2), value: generator.isGenerating)
       }
       .padding(.horizontal, 32)
       .padding(.bottom, 24)
@@ -196,15 +195,15 @@ struct ContentView: View {
       ZStack {
         if showMessage {
           HStack(spacing: 10) {
-            if statusMessage.contains("✅") {
+            if generator.statusMessage.contains("✅") {
               Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.green)
-            } else if statusMessage.contains("❌") {
+            } else if generator.statusMessage.contains("❌") {
               Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.red)
-            } else if statusMessage.contains("⚠️") {
+            } else if generator.statusMessage.contains("⚠️") {
               Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.orange)
@@ -214,7 +213,7 @@ struct ContentView: View {
                 .foregroundColor(.secondary)
             }
             
-            Text(statusMessage.replacingOccurrences(of: "✅ ", with: "")
+            Text(generator.statusMessage.replacingOccurrences(of: "✅ ", with: "")
               .replacingOccurrences(of: "❌ Error: ", with: "")
               .replacingOccurrences(of: "⚠️ ", with: ""))
               .font(.system(size: 13, weight: .medium, design: .rounded))
@@ -240,6 +239,9 @@ struct ContentView: View {
     }
     .frame(width: 400)
     .background(Color(NSColor.windowBackgroundColor))
+    .onChange(of: generator.statusMessage) { _ in
+      messageID = UUID()
+    }
   }
   
   
@@ -288,13 +290,7 @@ struct ContentView: View {
   
   private func loadImage(_ image: NSImage) {
     self.droppedImage = image
-    let pixelSize = IconGenerator().pixelSize(of: image)
-    if pixelSize.width != 1024 || pixelSize.height != 1024 {
-      self.statusMessage = "⚠️ Image is \(Int(pixelSize.width))x\(Int(pixelSize.height)) — recommended 1024x1024, it will be resized"
-    } else {
-      self.statusMessage = "Image loaded! Select a mode and click 'Generate'"
-    }
-    self.messageID = UUID()
+    generator.notifyImageLoaded(image)
   }
   
   private func generateIcons() {
@@ -307,33 +303,7 @@ struct ContentView: View {
     panel.prompt = "Save Here"
     
     if panel.runModal() == .OK, let saveUrl = panel.url {
-      isGenerating = true
-      statusMessage = "Creating folder and resizing..."
-      messageID = UUID()
-      
-      let generator = IconGenerator()
-      DispatchQueue.global(qos: .userInitiated).async {
-        do {
-          let slotCount = try generator.generate(
-            image: originalImage,
-            to: saveUrl,
-            mode: self.selectedMode,
-            iosStyle: self.iosIconStyle
-          )
-          DispatchQueue.main.async {
-            self.isGenerating = false
-            self.statusMessage = "✅ Done! Generated \(slotCount) icon slots."
-            self.messageID = UUID()
-            NSWorkspace.shared.open(saveUrl.appendingPathComponent("AppIcon.appiconset"))
-          }
-        } catch {
-          DispatchQueue.main.async {
-            self.isGenerating = false
-            self.statusMessage = "❌ Error: \(error.localizedDescription)"
-            self.messageID = UUID()
-          }
-        }
-      }
+      generator.generate(image: originalImage, to: saveUrl, mode: selectedMode, iosStyle: iosIconStyle)
     }
   }
 }

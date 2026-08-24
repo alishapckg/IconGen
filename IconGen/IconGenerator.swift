@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 
 enum IOSIconStyle: String, CaseIterable, Identifiable {
   case allSizes
@@ -7,11 +8,52 @@ enum IOSIconStyle: String, CaseIterable, Identifiable {
   var id: String { self.rawValue }
 }
 
-struct IconGenerator {
-  @discardableResult
-  func generate(image: NSImage, to directory: URL, mode: GenerationMode, iosStyle: IOSIconStyle) throws -> Int {
-    let setUrl = directory.appendingPathComponent("AppIcon.appiconset")
+@MainActor
+final class IconGenerator: ObservableObject {
+  @Published var isGenerating = false
+  @Published var statusMessage = "Drop a 1024x1024 image here"
+  
+  func generate(image: NSImage, to directory: URL, mode: GenerationMode, iosStyle: IOSIconStyle) {
+    guard !isGenerating else { return }
+    isGenerating = true
+    statusMessage = "Creating folder and resizing..."
     
+    let setUrl = directory.appendingPathComponent("AppIcon.appiconset")
+    Task {
+      do {
+        let slotCount = try await Task.detached(priority: .userInitiated) {
+          try IconGenerator.writeIconSet(image: image, to: setUrl, mode: mode, iosStyle: iosStyle)
+        }.value
+        isGenerating = false
+        statusMessage = "✅ Done! Generated \(slotCount) icon slots."
+        NSWorkspace.shared.open(setUrl)
+      } catch {
+        isGenerating = false
+        statusMessage = "❌ Error: \(error.localizedDescription)"
+      }
+    }
+  }
+  
+  func notifyImageLoaded(_ image: NSImage) {
+    let pixelSize = pixelSize(of: image)
+    if pixelSize.width != 1024 || pixelSize.height != 1024 {
+      statusMessage = "⚠️ Image is \(Int(pixelSize.width))x\(Int(pixelSize.height)) — recommended 1024x1024, it will be resized"
+    } else {
+      statusMessage = "Image loaded! Select a mode and click 'Generate'"
+    }
+  }
+  
+  nonisolated func pixelSize(of image: NSImage) -> NSSize {
+    if let rep = image.representations.first(where: { $0 is NSBitmapImageRep }) as? NSBitmapImageRep {
+      return NSSize(width: rep.pixelsWide, height: rep.pixelsHigh)
+    }
+    if let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+      return NSSize(width: cg.width, height: cg.height)
+    }
+    return NSSize(width: image.size.width, height: image.size.height)
+  }
+  
+  private nonisolated static func writeIconSet(image: NSImage, to setUrl: URL, mode: GenerationMode, iosStyle: IOSIconStyle) throws -> Int {
     if FileManager.default.fileExists(atPath: setUrl.path) {
       let existing = try FileManager.default.contentsOfDirectory(at: setUrl, includingPropertiesForKeys: nil)
       for staleUrl in existing {
@@ -148,17 +190,7 @@ struct IconGenerator {
     return jsonImages.count
   }
   
-  func pixelSize(of image: NSImage) -> NSSize {
-    if let rep = image.representations.first(where: { $0 is NSBitmapImageRep }) as? NSBitmapImageRep {
-      return NSSize(width: rep.pixelsWide, height: rep.pixelsHigh)
-    }
-    if let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
-      return NSSize(width: cg.width, height: cg.height)
-    }
-    return NSSize(width: image.size.width, height: image.size.height)
-  }
-  
-  private func pngData(for image: NSImage, size: Int) -> Data? {
+  private nonisolated static func pngData(for image: NSImage, size: Int) -> Data? {
     guard let rep = NSBitmapImageRep(
       bitmapDataPlanes: nil, pixelsWide: size, pixelsHigh: size,
       bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
