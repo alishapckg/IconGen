@@ -214,7 +214,9 @@ struct ContentView: View {
                 .foregroundColor(.secondary)
             }
             
-            Text(statusMessage.replacingOccurrences(of: "✅ ", with: "").replacingOccurrences(of: "❌ Error: ", with: "").replacingOccurrences(of: "⚠️ ", with: ""))
+            Text(statusMessage.replacingOccurrences(of: "✅ ", with: "")
+              .replacingOccurrences(of: "❌ Error: ", with: "")
+              .replacingOccurrences(of: "⚠️ ", with: ""))
               .font(.system(size: 13, weight: .medium, design: .rounded))
               .foregroundColor(.secondary)
               .lineLimit(nil)
