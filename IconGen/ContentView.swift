@@ -204,13 +204,17 @@ struct ContentView: View {
               Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.red)
+            } else if statusMessage.contains("⚠️") {
+              Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.orange)
             } else {
               Image(systemName: "info.circle")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.secondary)
             }
             
-            Text(statusMessage.replacingOccurrences(of: "✅ ", with: "").replacingOccurrences(of: "❌ Error: ", with: ""))
+            Text(statusMessage.replacingOccurrences(of: "✅ ", with: "").replacingOccurrences(of: "❌ Error: ", with: "").replacingOccurrences(of: "⚠️ ", with: ""))
               .font(.system(size: 13, weight: .medium, design: .rounded))
               .foregroundColor(.secondary)
               .lineLimit(nil)
@@ -235,6 +239,7 @@ struct ContentView: View {
     .frame(width: 400)
     .background(Color(NSColor.windowBackgroundColor))
   }
+  
   
   // MARK: - Logic
   
@@ -401,9 +406,7 @@ struct ContentView: View {
           if let data = data,
              let url = URL(dataRepresentation: data, relativeTo: nil),
              let image = NSImage(contentsOf: url) {
-            self.droppedImage = image
-            self.statusMessage = "Image loaded! Select a mode and click 'Generate'"
-            self.messageID = UUID()
+            self.loadImage(image)
           }
         }
       }
@@ -414,9 +417,7 @@ struct ContentView: View {
       let _ = provider.loadDataRepresentation(for: UTType.image) { data, error in
         DispatchQueue.main.async {
           if let data = data, let image = NSImage(data: data) {
-            self.droppedImage = image
-            self.statusMessage = "Image loaded! Select a mode and click 'Generate'"
-            self.messageID = UUID()
+            self.loadImage(image)
           }
         }
       }
@@ -432,11 +433,30 @@ struct ContentView: View {
     panel.allowsMultipleSelection = false
     if panel.runModal() == .OK, let url = panel.url {
       if let image = NSImage(contentsOf: url) {
-        self.droppedImage = image
-        self.statusMessage = "Image loaded! Select a mode and click 'Generate'"
-        self.messageID = UUID()
+        self.loadImage(image)
       }
     }
+  }
+  
+  private func loadImage(_ image: NSImage) {
+    self.droppedImage = image
+    let pixelSize = imagePixelSize(image)
+    if pixelSize.width != 1024 || pixelSize.height != 1024 {
+      self.statusMessage = "⚠️ Image is \(Int(pixelSize.width))x\(Int(pixelSize.height)) — recommended 1024x1024, it will be resized"
+    } else {
+      self.statusMessage = "Image loaded! Select a mode and click 'Generate'"
+    }
+    self.messageID = UUID()
+  }
+  
+  private func imagePixelSize(_ image: NSImage) -> NSSize {
+    if let rep = image.representations.first(where: { $0 is NSBitmapImageRep }) as? NSBitmapImageRep {
+      return NSSize(width: rep.pixelsWide, height: rep.pixelsHigh)
+    }
+    if let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+      return NSSize(width: cg.width, height: cg.height)
+    }
+    return NSSize(width: image.size.width, height: image.size.height)
   }
   
   private func generateIcons() {
