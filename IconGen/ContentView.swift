@@ -10,6 +10,7 @@ struct ContentView: View {
   @State private var statusMessage = "Drop a 1024x1024 image here"
   @State private var showMessage = true
   @State private var selectedMode: GenerationMode = .ios
+  @State private var iosIconStyle: IOSIconStyle = .allSizes
   @State private var messageID = UUID()
   
   // MARK: - Body
@@ -32,7 +33,23 @@ struct ContentView: View {
         ModePicker(selectedMode: $selectedMode)
       }
       .padding(.horizontal, 32)
-      .padding(.bottom, 28)
+      .padding(.bottom, selectedMode == .ios ? 14 : 28)
+      
+      if selectedMode == .ios {
+        HStack(spacing: 10) {
+          Text("Method")
+            .font(.system(size: 14, weight: .semibold, design: .rounded))
+            .foregroundColor(.secondary)
+          
+          StyledSegmentControl(
+            options: [IOSIconStyle.allSizes, IOSIconStyle.singleSize],
+            selection: $iosIconStyle,
+            label: { $0 == .allSizes ? "All Sizes" : "Single Size" }
+          )
+        }
+        .padding(.horizontal, 32)
+        .padding(.bottom, 14)
+      }
       
       ZStack {
         RoundedRectangle(cornerRadius: 24)
@@ -232,34 +249,59 @@ struct ContentView: View {
         }
       }
       try FileManager.default.createDirectory(at: setUrl, withIntermediateDirectories: true)
-      var jsonImages: [[String: String]] = []
+      var jsonImages: [[String: Any]] = []
       
       // --- iOS ---
       if mode == .ios || mode == .all {
-        let iosSizes = [40, 58, 60, 76, 80, 87, 120, 152, 167, 180, 1024]
-        for size in iosSizes {
-          let fileName = "icon_\(size)x\(size).png"
-          if let data = getPNGData(for: image, size: size) {
-            try data.write(to: setUrl.appendingPathComponent(fileName))
+        if iosIconStyle == .singleSize {
+          let singleSizeFiles: [(file: String, appearance: String?)] = [
+            ("AppIcon.png", nil),
+            ("AppIcon-Dark.png", "dark"),
+            ("AppIcon-Tinted.png", "tinted")
+          ]
+          for (file, _) in singleSizeFiles {
+            if let data = getPNGData(for: image, size: 1024) {
+              try data.write(to: setUrl.appendingPathComponent(file))
+            }
           }
+          for (file, appearance) in singleSizeFiles {
+            var entry: [String: Any] = [
+              "filename": file,
+              "idiom": "universal",
+              "platform": "ios",
+              "size": "1024x1024"
+            ]
+            if let appearance {
+              entry["appearances"] = [["appearance": "luminosity", "value": appearance]]
+            }
+            jsonImages.append(entry)
+          }
+        } else {
+          let iosSizes = [40, 58, 60, 76, 80, 87, 120, 152, 167, 180, 1024]
+          for size in iosSizes {
+            let fileName = "icon_\(size)x\(size).png"
+            if let data = getPNGData(for: image, size: size) {
+              try data.write(to: setUrl.appendingPathComponent(fileName))
+            }
+          }
+          jsonImages.append(contentsOf: [
+            ["filename": "icon_40x40.png",   "size": "20x20",     "scale": "2x", "idiom": "iphone"],
+            ["filename": "icon_60x60.png",   "size": "20x20",     "scale": "3x", "idiom": "iphone"],
+            ["filename": "icon_40x40.png",   "size": "20x20",     "scale": "2x", "idiom": "ipad"],
+            ["filename": "icon_58x58.png",   "size": "29x29",     "scale": "2x", "idiom": "iphone"],
+            ["filename": "icon_87x87.png",   "size": "29x29",     "scale": "3x", "idiom": "iphone"],
+            ["filename": "icon_58x58.png",   "size": "29x29",     "scale": "2x", "idiom": "ipad"],
+            ["filename": "icon_80x80.png",   "size": "40x40",     "scale": "2x", "idiom": "iphone"],
+            ["filename": "icon_120x120.png", "size": "40x40",     "scale": "3x", "idiom": "iphone"],
+            ["filename": "icon_80x80.png",   "size": "40x40",     "scale": "2x", "idiom": "ipad"],
+            ["filename": "icon_120x120.png", "size": "60x60",     "scale": "2x", "idiom": "iphone"],
+            ["filename": "icon_180x180.png", "size": "60x60",     "scale": "3x", "idiom": "iphone"],
+            ["filename": "icon_76x76.png",   "size": "76x76",     "scale": "1x", "idiom": "ipad"],
+            ["filename": "icon_152x152.png", "size": "76x76",     "scale": "2x", "idiom": "ipad"],
+            ["filename": "icon_167x167.png", "size": "83.5x83.5", "scale": "2x", "idiom": "ipad"],
+            ["filename": "icon_1024x1024.png","size": "1024x1024","scale": "1x", "idiom": "ios-marketing"]
+          ])
         }
-        jsonImages.append(contentsOf: [
-          ["filename": "icon_40x40.png",   "size": "20x20",     "scale": "2x", "idiom": "iphone"],
-          ["filename": "icon_60x60.png",   "size": "20x20",     "scale": "3x", "idiom": "iphone"],
-          ["filename": "icon_40x40.png",   "size": "20x20",     "scale": "2x", "idiom": "ipad"],
-          ["filename": "icon_58x58.png",   "size": "29x29",     "scale": "2x", "idiom": "iphone"],
-          ["filename": "icon_87x87.png",   "size": "29x29",     "scale": "3x", "idiom": "iphone"],
-          ["filename": "icon_58x58.png",   "size": "29x29",     "scale": "2x", "idiom": "ipad"],
-          ["filename": "icon_80x80.png",   "size": "40x40",     "scale": "2x", "idiom": "iphone"],
-          ["filename": "icon_120x120.png", "size": "40x40",     "scale": "3x", "idiom": "iphone"],
-          ["filename": "icon_80x80.png",   "size": "40x40",     "scale": "2x", "idiom": "ipad"],
-          ["filename": "icon_120x120.png", "size": "60x60",     "scale": "2x", "idiom": "iphone"],
-          ["filename": "icon_180x180.png", "size": "60x60",     "scale": "3x", "idiom": "iphone"],
-          ["filename": "icon_76x76.png",   "size": "76x76",     "scale": "1x", "idiom": "ipad"],
-          ["filename": "icon_152x152.png", "size": "76x76",     "scale": "2x", "idiom": "ipad"],
-          ["filename": "icon_167x167.png", "size": "83.5x83.5", "scale": "2x", "idiom": "ipad"],
-          ["filename": "icon_1024x1024.png","size": "1024x1024","scale": "1x", "idiom": "ios-marketing"]
-        ])
       }
       
       // --- macOS ---
@@ -317,7 +359,7 @@ struct ContentView: View {
           if let data = getPNGData(for: image, size: slot.px) {
             try data.write(to: setUrl.appendingPathComponent(slot.file))
           }
-          var entry: [String: String] = [
+          var entry: [String: Any] = [
             "filename": slot.file,
             "idiom": "universal",
             "platform": "watchos",
