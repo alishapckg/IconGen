@@ -19,7 +19,7 @@ struct ContentView: View {
       VStack(spacing: 6) {
         Text("App Icon Generator")
           .font(.system(size: 26, weight: .bold, design: .rounded))
-          .foregroundColor(Color(red: 0.2, green: 0.2, blue: 0.25))
+          .foregroundColor(.primary)
         
         Text("Perfect sizes for Xcode in one click")
           .font(.system(size: 14, weight: .medium))
@@ -123,7 +123,7 @@ struct ContentView: View {
           .cornerRadius(14)
           .overlay(
             RoundedRectangle(cornerRadius: 14)
-              .strokeBorder(Color.black.opacity(0.08), lineWidth: 1)
+              .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
           )
           .foregroundColor(.primary)
           .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
