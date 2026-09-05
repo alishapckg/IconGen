@@ -225,6 +225,12 @@ struct ContentView: View {
     let setUrl = directory.appendingPathComponent("AppIcon.appiconset")
     
     do {
+      if FileManager.default.fileExists(atPath: setUrl.path) {
+        let existing = try FileManager.default.contentsOfDirectory(at: setUrl, includingPropertiesForKeys: nil)
+        for staleUrl in existing {
+          try FileManager.default.removeItem(at: staleUrl)
+        }
+      }
       try FileManager.default.createDirectory(at: setUrl, withIntermediateDirectories: true)
       var jsonImages: [[String: String]] = []
       
