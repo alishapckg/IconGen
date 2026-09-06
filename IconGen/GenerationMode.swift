@@ -1,7 +1,7 @@
 enum GenerationMode: String, CaseIterable, Identifiable {
   case ios
   case macos
-  //  case watchos
+  case watchos
   case all
   
   var id: String { self.rawValue }
@@ -10,7 +10,7 @@ enum GenerationMode: String, CaseIterable, Identifiable {
     switch self {
     case .ios: return "iOS"
     case .macos: return "macOS"
-      //    case .watchos: return "watchOS"
+    case .watchos: return "watchOS"
     case .all: return "All"
     }
   }

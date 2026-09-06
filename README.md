@@ -6,7 +6,7 @@
 
 A clean, native macOS utility for generating Xcode-compatible app icons in one click.
 
-Simply drag and drop a 1024x1024 source image, choose your target platform (iOS, macOS, or both), and IconGen instantly creates a perfectly structured AppIcon.appiconset folder with all required sizes and a pre-filled Contents.json file.
+Simply drag and drop a 1024x1024 source image, choose your target platform (iOS, macOS, watchOS, or all), and IconGen instantly creates a perfectly structured AppIcon.appiconset folder with all required sizes and a pre-filled Contents.json file.
 
 ### 📦 Installation
 
@@ -27,7 +27,7 @@ Don't worry, the app's code is safe)._
 
 - Open the app.
 - Drop a 1024x1024 PNG image into the drop zone (or click Select File).
-- Choose the generation mode: iOS, macOS, or All.
+- Choose the generation mode: iOS, macOS, watchOS, or All.
 - Click the Generate button.
 - Select a destination folder. The app will create an AppIcon.appiconset folder there and automatically open it in Finder for you.
 

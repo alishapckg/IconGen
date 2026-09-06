@@ -281,6 +281,49 @@ struct ContentView: View {
         ])
       }
       
+      // --- watchOS ---
+      if mode == .watchos || mode == .all {
+        // 20 slots, Xcode 26 "All Sizes" schema (universal idiom, no roles/subtypes)
+        let watchSlots: [(file: String, px: Int, size: String, scale: String?)] = [
+          ("icon_44x44.png",   44,   "22x22",     "2x"),
+          ("icon_48x48.png",   48,   "24x24",     "2x"),
+          ("icon_55x55.png",   55,   "27.5x27.5", "2x"),
+          ("icon_58x58.png",   58,   "29x29",     "2x"),
+          ("icon_60x60.png",   60,   "30x30",     "2x"),
+          ("icon_64x64.png",   64,   "32x32",     "2x"),
+          ("icon_66x66.png",   66,   "33x33",     "2x"),
+          ("icon_80x80.png",   80,   "40x40",     "2x"),
+          ("icon_87x87.png",   87,   "43.5x43.5", "2x"),
+          ("icon_88x88.png",   88,   "44x44",     "2x"),
+          ("icon_92x92.png",   92,   "46x46",     "2x"),
+          ("icon_100x100.png", 100,  "50x50",     "2x"),
+          ("icon_102x102.png", 102,  "51x51",     "2x"),
+          ("icon_108x108.png", 108,  "54x54",     "2x"),
+          ("icon_172x172.png", 172,  "86x86",     "2x"),
+          ("icon_196x196.png", 196,  "98x98",     "2x"),
+          ("icon_216x216.png", 216,  "108x108",   "2x"),
+          ("icon_234x234.png", 234,  "117x117",   "2x"),
+          ("icon_258x258.png", 258,  "129x129",   "2x"),
+          ("icon_1024x1024.png", 1024, "1024x1024", nil)
+        ]
+        
+        for slot in watchSlots {
+          if let data = getPNGData(for: image, size: slot.px) {
+            try data.write(to: setUrl.appendingPathComponent(slot.file))
+          }
+          var entry: [String: String] = [
+            "filename": slot.file,
+            "idiom": "universal",
+            "platform": "watchos",
+            "size": slot.size
+          ]
+          if let scale = slot.scale {
+            entry["scale"] = scale
+          }
+          jsonImages.append(entry)
+        }
+      }
+      
       let jsonDict: [String: Any] = ["images": jsonImages, "info": ["version": 1, "author": "xcode"]]
       let jsonData = try JSONSerialization.data(withJSONObject: jsonDict, options: .prettyPrinted)
       try jsonData.write(to: setUrl.appendingPathComponent("Contents.json"))
