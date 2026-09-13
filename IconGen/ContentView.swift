@@ -31,11 +31,12 @@ struct ContentView: View {
       HStack(spacing: 0) {
         Picker("Mode", selection: $selectedMode) {
           ForEach(GenerationMode.allCases) { mode in
-            Text(mode.rawValue).tag(mode)
+            Text(mode.rawValue)
+              .tag(mode)
           }
         }
         .pickerStyle(.segmented)
-        .padding(4)
+        .padding(8)
         .background(Color(NSColor.controlBackgroundColor))
         .cornerRadius(10)
         .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
